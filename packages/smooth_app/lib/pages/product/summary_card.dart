@@ -31,7 +31,6 @@ import 'package:smooth_app/pages/product/product_questions_widget.dart';
 import 'package:smooth_app/query/category_product_query.dart';
 import 'package:smooth_app/query/product_query.dart';
 
-
 import 'package:smooth_app/diabeedoc/dataFetcher.dart';
 
 const List<String> _ATTRIBUTE_GROUP_ORDER = <String>[
@@ -159,20 +158,6 @@ class _SummaryCardState extends State<SummaryCard> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
-              FutureBuilder<PredictionResult>(
-                future: _predictionResult,
-                builder: (context, snapshot) {
-                  if (snapshot.hasData) {
-                    return Text(snapshot.data!.response.toString() ??
-                        "Unknown Prediction");
-                  } else if (snapshot.hasError) {
-                    return Text('${snapshot.error}');
-                  }
-
-                  // By default, show a loading spinner.
-                  return const CircularProgressIndicator();
-                },
-              ),
               Container(
                 padding: const EdgeInsets.symmetric(
                   vertical: SMALL_SPACE,
@@ -384,7 +369,55 @@ class _SummaryCardState extends State<SummaryCard> {
 
   List<Widget> _getAttributes(List<Attribute> scoreAttributes) {
     final List<Widget> attributes = <Widget>[];
+    attributes.add(
+      FutureBuilder<PredictionResult>(
+        future: _predictionResult,
+        builder: (context, snapshot) {
+          if (snapshot.hasData) {
+            String _giDescription;
+            CardEvaluation _giEvaluation;
 
+            final result = snapshot.data!.response ?? -1; // for track errors
+            if (result == 0) {
+              _giDescription = "Highly recommended for diabetes";
+              _giEvaluation = CardEvaluation.VERY_GOOD;
+            } else if (result == 1) {
+              _giDescription = "Moderate for diabetes";
+              _giEvaluation = CardEvaluation.NEUTRAL;
+            } else if (result == 2) {
+              _giDescription = "Not recommended for diabetes";
+              _giEvaluation = CardEvaluation.VERY_BAD;
+            } else {
+              _giDescription = "Suitability unknown for diabetes";
+              _giEvaluation = CardEvaluation.UNKNOWN;
+            }
+            return ScoreCard(
+              iconUrl: null,
+              description: _giDescription,
+              cardEvaluation: _giEvaluation,
+              isClickable: false,
+              margin: EdgeInsets.zero,
+            );
+
+            Text(snapshot.data!.response.toString() ?? "Unknown Prediction");
+          } else if (snapshot.hasError) {
+            return Text('${snapshot.error}');
+          }
+
+          // By default, show a loading spinner.
+          return const CircularProgressIndicator();
+        },
+      ),
+    );
+    // attributes.add(ScoreCard(
+    //             iconUrl: null,
+    //             description:
+    //                 "sdfskdjfhjskdf",
+    //             cardEvaluation: CardEvaluation.BAD,
+    //             isClickable: true,
+    //             margin: EdgeInsets.zero,
+    //           )
+    //           );
     for (final Attribute attribute in scoreAttributes) {
       if (widget.isFullVersion) {
         attributes.add(
