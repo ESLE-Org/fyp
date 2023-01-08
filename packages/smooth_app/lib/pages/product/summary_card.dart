@@ -31,6 +31,9 @@ import 'package:smooth_app/pages/product/product_questions_widget.dart';
 import 'package:smooth_app/query/category_product_query.dart';
 import 'package:smooth_app/query/product_query.dart';
 
+
+import 'package:smooth_app/diabeedoc/dataFetcher.dart';
+
 const List<String> _ATTRIBUTE_GROUP_ORDER = <String>[
   AttributeGroup.ATTRIBUTE_GROUP_ALLERGENS,
   AttributeGroup.ATTRIBUTE_GROUP_INGREDIENT_ANALYSIS,
@@ -83,6 +86,7 @@ class _SummaryCardState extends State<SummaryCard> {
   late Product _product;
   late final Product _initialProduct;
   late final LocalDatabase _localDatabase;
+  Future<PredictionResult>? _predictionResult;
 
   // Number of Rows that will be printed in the SummaryCard, initialized to a
   // very high number for infinite rows.
@@ -97,6 +101,7 @@ class _SummaryCardState extends State<SummaryCard> {
     _initialProduct = widget._product;
     _localDatabase = context.read<LocalDatabase>();
     _localDatabase.upToDate.showInterest(_initialProduct.barcode!);
+    _predictionResult = fetchPredictData(_initialProduct);
   }
 
   @override
@@ -154,6 +159,20 @@ class _SummaryCardState extends State<SummaryCard> {
             crossAxisAlignment: CrossAxisAlignment.stretch,
             mainAxisAlignment: MainAxisAlignment.end,
             children: <Widget>[
+              FutureBuilder<PredictionResult>(
+                future: _predictionResult,
+                builder: (context, snapshot) {
+                  if (snapshot.hasData) {
+                    return Text(snapshot.data!.response.toString() ??
+                        "Unknown Prediction");
+                  } else if (snapshot.hasError) {
+                    return Text('${snapshot.error}');
+                  }
+
+                  // By default, show a loading spinner.
+                  return const CircularProgressIndicator();
+                },
+              ),
               Container(
                 padding: const EdgeInsets.symmetric(
                   vertical: SMALL_SPACE,
